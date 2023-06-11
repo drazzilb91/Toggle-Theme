@@ -1,29 +1,30 @@
 # Powershell script to toggle between light and dark theme in Windows 11
 # Author: @drazzilb91
-# Date: 2023-03-18
+# Date: 2023-06-22
 
 # User variables for light and dark theme file names
-$lightName = "MMLight.theme"
-$darkName = "MMDark.theme"
+$lightName = "aero.theme"
+$darkName = "dark.theme"
+$defaultWindowsThemeFolder = "C:\Windows\Resources\Themes\"
+$lightThemeFileName = $defaultWindowsThemeFolder + $lightName
+$darkThemeFileName = $defaultWindowsThemeFolder + $darkName
 
-# Get current theme path
-$currentThemePath = (Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\" -Name CurrentTheme).CurrentTheme
+# Get current theme
+$isLightThemeEnabled = (Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme).AppsUseLightTheme
 
 # Get theme folder path and fileName
-$folderPath = Split-Path -Path $currentThemePath -Parent
-$currentFileName = Split-Path -Path $currentThemePath -Leaf
-$darkPath = $folderPath + "\" + $darkName
-$lightPath = $folderPath + "\" + $lightName
+$themeFolder = (Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\" -Name CurrentTheme).CurrentTheme
 
 # Use theme name to check whether current theme is light or dark and then toggle to the opposite.
-if ($currentFileName -eq $darkName) {
-    echo "Dark theme. Switching to light theme located at $lightPath."
-    Start $lightPath
-} elseif ($currentFileName -eq $lightName) {
-    echo "Light theme. Switching to dark theme located at $darkPath."
-    Start $darkPath
-}
-else {
-    echo "Something went wrong. Current theme is not an exact match to the provided light or dark theme file names. Exiting."
-    exit
+if ($isLightThemeEnabled -eq 1) {
+    Write-Host "Light theme is active. Switching to dark theme located at $darkThemeFileName."
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\" /v CurrentTheme /t REG_SZ /d $darkThemeFileName /f
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f
+    Write-Host "Dark theme is now active."
+} else  {
+    Write-Host "Dark theme is active. Switching to light theme located at $lightThemeFileName."
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\" /v CurrentTheme /t REG_SZ /d $lightThemeFileName /f
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 1 /f
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 1 /f
 }
